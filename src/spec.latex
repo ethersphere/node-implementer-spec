@@ -39,7 +39,7 @@ The following only describes the Swarm protocols. Explaining \texttt{devp2p} and
 
 \newpage
 
-\bibliography{swarmdevspec}
+\bibliography{spec}
 \bibliographystyle{plain}
 
 \end{document}
