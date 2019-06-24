@@ -16,8 +16,8 @@ The bzz handshake is the first message to be exchanged between peers after the p
 The handshake message consists of four data fields:
 
 \begin{lstlisting}[numbers=none]
-Version      	     number
-Network ID           number
+Version      	     uint64
+Network ID           uint64
 Address data         AddressPair (see below)
 Light Node           boolean (byte)
 \end{lstlisting}
@@ -41,8 +41,6 @@ The \texttt{Light Node} field is a boolean value, indicating whether the node is
 Consider a handshake message with the following arbitary values:
 
 \begin{lstlisting}[numbers=none]
-
-
 Version               42
 Network ID            622
 Address Data pt. 1    134c2fdea53719022366b383bae4ae2e23f74d734a4f40170970b2910da851ee     

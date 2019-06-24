@@ -1,14 +1,92 @@
 \subsection{pss}
 
-The pss protocol consists of a single message type. The message type provides optional encryption alternatives (using Whisper). It also contains information about how it should be routed in the Swarm netowrk, and a topic which determines how the receiver should process the message's content.
+The \texttt{pss} protocol consists of a single message type. The message type provides optional builtin encryption alternatives. It also contains information about how it should be routed in the Swarm network, and a topic which determines how the receiver should process the message's content.
+
+For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any Whisper-related parts of your Pss implementation are fully compartmentalized, so they can be replaced as easily as possible.
 
 \subsection{message structure}
 
 The message type is structured as follows:
 
-\begin{lstlisting}
-To		Address
+\begin{lstlisting}[numbers=none]
+To		PssAddress
 Control		byte
-Expire		number
+Expire		uint32
 Payload		Envelope
+\end{lstlisting}
+
+The \texttt{PssAddress} is a Swarm Overlay Address. The address may be specified:
+
+\begin{itemize}
+\item Full, $32$ bytes
+\item Partial, with $n$ least significant bytes removed
+\item Empty, $0$ bytes
+\end{itemize}
+
+The \texttt{Control} byte is a bit field that allows the sender to specify certain conditions for the processing of the message. These are currently:
+
+\begin{lstlisting}[numbers=none]
+Symmetric	0x01 // the message uses builtin symmetric encryption
+Raw		0x02 // the message does not use builtin encryption
+\end{lstlisting}
+
+The \texttt{Expire} field is a 32 byte \texttt{Unix Timestamp}. Messages encountered later than the time represented by this timestamp \emph{MUST NOT} be routed or processed.
+
+The \texttt{Envelope} field is a \emph{Whisper Envelope} structure. See below.
+
+\subsubsection{Whisper Envelope} 
+
+It is out of scope of this document to discuss implementation details of Whisper. However, the \texttt{RLP} serialization of a Pss message also includes the serialization of the \texttt{Whisper} envelope. Therefore, we include an informal description of the \texttt{RLP} serialization of the \texttt{Whisper} envelope here for convenience.
+
+The envelope contains the following fields.
+
+\begin{lstlisting}[numbers=none]
+Expiry	uint32		// ignored
+TTL	uint32		// ignored
+Topic	Topic		// 4 bytes
+Data	bytes		// arbitrary bytes
+Nonce	uint64		// ignored
+\end{lstlisting}
+
+The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope.
+
+\texttt{Topic} is used to determine whether or not the message is relevant for a receiver, and which code the receiver should used to process the message. Note that \texttt{Topic} is \emph{not} used in the same manner in Pss as it is in Whisper.
+
+\texttt{Data} contains the actual message Payload.
+
+\subsubsection{Raw sending mode}
+
+If the \texttt{Raw} control bit is set, builtin encryption is not used. 
+
+In this case, the \texttt{Data} field in the envelope simply consists of the literal byte data of the message payload.
+
+No \texttt{Whisper} functions are executed on the envelope. 
+
+\subsubsection{Example}
+
+Because the details of the \texttt{Whisper} implementation is out of scope of this document, we will limit ourselves to describing the message \texttt{RLP} serialization using the \emph{Raw sending mode}.
+
+Consider a \texttt{pss} message with the following arbitary values:
+
+\begin{lstlisting}[numbers=none]
+Pss message:
+To		0xabcd 		// A 2-byte partial address
+Control		0x02		// Raw sending mode
+Expire		1561373650
+Payload		Envelope	// see below
+
+Envelope:
+Expiry		0		// unused
+TTL		0		// unused
+Topic		0x0000026e
+Payload		0x666f6f	
+Nonce		0
+\end{lstlisting}
+
+The RLP encoding of this message will be:
+
+\begin{lstlisting}[numbers=none]
+00000000  d6 82 ab cd 02 84 5d 10  ab d2 cc 80 80 84 00 00  |......].........|
+00000010  02 6e 83 66 6f 6f 80                              |.n.foo.|
+00000017
 \end{lstlisting}
