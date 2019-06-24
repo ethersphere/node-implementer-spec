@@ -2,7 +2,7 @@
 
 The \texttt{pss} protocol consists of a single message type. The message type provides optional builtin encryption alternatives. It also contains information about how it should be routed in the Swarm network, and a topic which determines how the receiver should process the message's content.
 
-For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any Whisper-related parts of your Pss implementation are fully compartmentalized, so they can be replaced as easily as possible.
+For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any \texttt{Whisper}-related parts of your \texttt{pss} implementation are fully compartmentalized, so they can be replaced as easily as possible.
 
 \subsection{message structure}
 
@@ -36,7 +36,7 @@ The \texttt{Envelope} field is a \emph{Whisper Envelope} structure. See below.
 
 \subsubsection{Whisper Envelope} 
 
-It is out of scope of this document to discuss implementation details of Whisper. However, the \texttt{RLP} serialization of a Pss message also includes the serialization of the \texttt{Whisper} envelope. Therefore, we include an informal description of the \texttt{RLP} serialization of the \texttt{Whisper} envelope here for convenience.
+It is out of scope of this document to discuss implementation details of Whisper. However, the \texttt{RLP} serialization of a \texttt{pss} message also includes the serialization of the \texttt{Whisper} envelope. Therefore, we include an informal description of the \texttt{RLP} serialization of the \texttt{Whisper} envelope here for convenience.
 
 The envelope contains the following fields.
 
@@ -48,9 +48,9 @@ Data	bytes		// arbitrary bytes
 Nonce	uint64		// ignored
 \end{lstlisting}
 
-The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope.
+The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope. \footnote{In the \texttt{geth} implementation of \texttt{Whisper} it is not possible to encrypt a message \emph{without} performing any \emph{Proof-of-Work}. \texttt{pss} sets the \texttt{PoW} parameter to $10^{-10}$, which effectively reduces the amount of work done to zero. On decryption, \emph{pss} \emph{ignores} the \texttt{PoW} value on the \texttt{Whisper} envelope.}
 
-\texttt{Topic} is used to determine whether or not the message is relevant for a receiver, and which code the receiver should used to process the message. Note that \texttt{Topic} is \emph{not} used in the same manner in Pss as it is in Whisper.
+\texttt{Topic} is used to determine whether or not the message is relevant for a receiver, and which code the receiver should used to process the message. \footnote{Note that the \texttt{Topic} is \emph{not} used for the same purpose in \texttt{pss} as it is in Whisper.}
 
 \texttt{Data} contains the actual message Payload.
 
@@ -104,7 +104,7 @@ This decision algorithm consists of the following sequential steps:
 
 \subsubsection{Addressing}
 
-Firstly, the node's Swarm Overlay Address \emph{MUST} match the \texttt{To} field of the \texttt{pss} message.
+The receiving node's Swarm Overlay Address \emph{MUST} match the \texttt{To} field of the \texttt{pss} message.
 
 In case the \texttt{To} field is a \emph{partial} address, the partial address \emph{MUST} match the corresponding part of the node's address.
 
