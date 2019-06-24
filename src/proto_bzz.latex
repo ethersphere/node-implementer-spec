@@ -28,7 +28,7 @@ The second part is data of arbitrary length, and is meant to represent the ident
 
 \subsection{protocol}
 
-Upon connection, peers send one handshake each to each other. If a more than one handshake is received from the same peer, the connection \emph{MUST} be dropped.
+Upon connection, the \emph{peer who initiated the connection} sends a handshake message to the other. If a more than one handshake is received from the same peer, the connection \emph{MUST} be dropped.
 
 The peers \emph{MUST} have the same \texttt{Version} and \texttt{Network ID}. If one or both of the fields don't match, the connection \emph{MUST} be dropped.
 

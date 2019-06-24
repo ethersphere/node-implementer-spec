@@ -2,7 +2,7 @@
 
 The \texttt{pss} protocol consists of a single message type. The message type provides optional builtin encryption alternatives. It also contains information about how it should be routed in the Swarm network, and a topic which determines how the receiver should process the message's content.
 
-For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any \texttt{Whisper}-related parts of your \texttt{pss} implementation are fully compartmentalized, so they can be replaced as easily as possible.
+For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any \texttt{Whisper}-related parts of your \texttt{pss} implementation are fully compartmentalized, so they can be replaced with as little effort and impact on the implementation as possible.
 
 \subsection{message structure}
 
@@ -48,9 +48,9 @@ Data	bytes		// arbitrary bytes
 Nonce	uint64		// ignored
 \end{lstlisting}
 
-The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope. \footnote{In the \texttt{geth} implementation of \texttt{Whisper} it is not possible to encrypt a message \emph{without} performing any \emph{Proof-of-Work}. \texttt{pss} sets the \texttt{PoW} parameter to $10^{-10}$, which effectively reduces the amount of work done to zero. On decryption, \emph{pss} \emph{ignores} the \texttt{PoW} value on the \texttt{Whisper} envelope.}
+The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope.\footnote{In the \texttt{geth} implementation of \texttt{Whisper} it is not possible to encrypt a message \emph{without} performing any \emph{Proof-of-Work}. \texttt{pss} sets the \texttt{PoW} parameter to $10^{-10}$, which effectively reduces the amount of work done to zero. On decryption, \emph{pss} \emph{ignores} the \texttt{PoW} value derived from the \texttt{Whisper} envelope.}
 
-\texttt{Topic} is used to determine whether or not the message is relevant for a receiver, and which code the receiver should used to process the message. \footnote{Note that the \texttt{Topic} is \emph{not} used for the same purpose in \texttt{pss} as it is in Whisper.}
+\texttt{Topic} is used to determine whether or not the message is relevant for a receiver, and which code the receiver should used to process the message.\footnote{Note that the \texttt{Topic} is \emph{not} used for the same purpose in \texttt{pss} as it is in Whisper.}
 
 \texttt{Data} contains the actual message Payload.
 
@@ -62,7 +62,7 @@ In this case, the \texttt{Data} field in the envelope simply consists of the lit
 
 No \texttt{Whisper} functions are executed on the envelope. 
 
-\subsubsection{Example}
+\subsubsection{Example} \label{pss-message-example}
 
 Because the details of the \texttt{Whisper} implementation is out of scope of this document, we will limit ourselves to describing the message \texttt{RLP} serialization using the \emph{Raw sending mode}.
 
@@ -93,7 +93,9 @@ The RLP encoding of this message will be:
 
 \subsection{Message handling}
 
-Whether or not a node should process a message, and how it should process it, depends on several factors.
+A \emph{receiver} of a message is any node whose address matchs the address of the message, and who is able to decipher the contents.
+
+Whether or not a node should process a message, and \emph{how} it should process it, depends on several factors:
 
 \begin{itemize}
 \item parameters in the message
@@ -125,12 +127,75 @@ Handler code for a \texttt{Topic} \emph{MAY OR MAY NOT} allow messages sent with
 If only built-in encryption is allowed, \emph{whether} and \emph{how} to handle the message \emph{MUST} depend on:
 
 \begin{itemize}
-\item Is the message encrypted using symmetric encryption or public key encryption?
-\item Does the node have the necessary key to decrypt the message.
+\item Whether the message encrypted using symmetric encryption or public key encryption.
+\item Whether the node can successfully decrypt the message.
 \end{itemize}
 
-Handling code \emph{SHOULD} only be registered for one single type of encryption scheme.
+Handling code \emph{SHOULD} only be registered for one single encryption scheme.
 
 For example, if handler code is registered to messages encrypted with symmetric key $S_1$ and \emph{Topic} $T$, and the node receives a message with topic $T$ encrypted with public key $P_1pub$, and the node knows the private key $P_1priv$, the message \emph{SHOULD NOT} be processed.
 
+\subsection{Forwarding}
 
+The rules for message forwarding apply to \emph{all} nodes on the message route. In this document we refer to these nodes \emph{relaying nodes}. This includes the \emph{sender} and any \emph{receiver} nodes.
+
+A node \emph{MUST} always forward a message\footnote{This is done to make it more difficult to determine the true recipient of a message by traffic analysis}, \emph{unless} one of these criteria are fulfilled:
+
+\begin{enumerate}
+\item the address in the \texttt{To}-field of the message is a full 32-byte address, \emph{and} matches fully with the node's Swarm Overlay Address\footnote{In this case the recipient is already fully revealed to anyone observing the traffic}.
+\item the message has been seen already, before a certain period of time has elapsed, currently defined as $10$ seconds. (see \ref{sec:message-digest})
+\end{enumerate}
+
+
+\texttt{pss} uses the same kademlia table for routing decisions that the Swarm node uses for content routing. \cite[p. 2]{SWARMNETWORK} 
+
+\subsubsection{Routing with full address} \label{sec:routing-with-full-address}
+
+By full address we mean that the \texttt{To}-field on the \texttt{pss} message contains the full 32 bytes of the intended recipient node.
+
+\begin{enumerate}
+\item Identify the peer whose Swarm Overlay Address is the closest to the message address (the \texttt{To} field.
+\item If the selected peer is in the \emph{most proximate bin} of the node, the message should be forwarded to \emph{all} the node's \emph{nearest neighbors}.
+\item Otherwise, if the address is a full 32-byte address, the node \emph{MUST} attempt to send to exactly \emph{one} peer in the bin that is the closest match to the message.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest.
+\item If this is not successful, the node should keep the message and retry later.
+\end{enumerate}
+
+\subsubsection{Routing with partial address}
+
+\begin{enumerate}
+\item Identify the \emph{farthest} peer that matches the partial address.
+\item If that peer is in the \emph{most proximate bin}, the message is relayed as in \ref{sec:routing-with-full-address}.
+\item Otherwise, The message should be forwarded to \emph{all} peers that are in the matching bin or closer\footnote{Notice that in this context, the matching bin becomes the \emph{most proximate bin}}.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest.
+\item If this is not successful, the node should keep the message and retry later.
+\end{enumerate}
+
+\subsubsection{Routing with empty address}
+
+\begin{enumerate}
+\item Message should be forwarded to \emph{all} peers.
+\item If \emph{none} of the peers can successfully be forwarded to, the node should keep the message an retry later.
+\end{enumerate}
+
+\subsubsection{Message digest} \label{sec:message-digest}
+
+In order to identify messages that have already been seen, a message digest is computed on the message by every relaying node. 
+
+The digest is the \emph{KECCAK256 hash} of the \texttt{RLP} serialization of the \texttt{To} and \texttt{Payload} fields of the \texttt{pss} message.
+
+For example, the \texttt{RLP} serialized data for calculating the of the message in \ref{pss-message-example} would be:
+
+\begin{lstlisting}[numbers=none]
+00000000  d0 82 ab cd cc 80 80 84  00 00 02 6e 83 66 6f 6f  |...........n.foo|
+00000010  80                                                |.|
+00000011
+\end{lstlisting}
+
+The resulting digest:
+
+\begin{lstlisting}[numbers=none]
+00000000  7e 42 00 03 02 db be 05  ec 83 12 3c 4d 59 ea 4a  |~B.........<MY.J|
+00000010  92 ff 01 44 60 38 64 dd  6f 06 b8 67 9d 81 72 98  |...D`8d.o..g..r.|
+00000020
+\end{lstlisting}

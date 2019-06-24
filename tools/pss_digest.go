@@ -5,29 +5,30 @@ import (
 	"encoding/hex"
 	"flag"
 	"os"
-	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 	whisper "github.com/ethereum/go-ethereum/whisper/whisperv6"
-	"github.com/ethersphere/swarm/pss"
+	"github.com/ethersphere/swarm/storage"
 )
+
+type digestStruct struct {
+	To      []byte
+	Payload *whisper.Envelope
+}
 
 func main() {
 
 	var addrString *string
 	var addrLength *int
 	var addr []byte
-	var expireInt *int
-	var expire uint32
 	var topicString *string
 	var topic whisper.TopicType
-
-	nowTime := int(time.Now().Unix())
+	var nodigest *bool
 
 	addrLength = flag.Int("l", 32, "address length")
 	addrString = flag.String("a", "", "literal address bytes in hex (overrides -l)")
-	expireInt = flag.Int("e", nowTime, "set expire timestamp (default: now)")
 	topicString = flag.String("t", "00000000", "set topic (default: 0x00000000")
+	nodigest = flag.Bool("r", false, "set to get rlp encoding used for digest (default: false")
 	flag.Parse()
 
 	// set the data for the payload
@@ -42,7 +43,12 @@ func main() {
 			panic("Address must be 0 <= n <= 32")
 		}
 		addr = make([]byte, *addrLength)
-		rand.Read(addr)
+		c, err := rand.Read(addr)
+		if err != nil {
+			panic(err)
+		} else if c != *addrLength {
+			panic("short read")
+		}
 	} else {
 		addr, err = hex.DecodeString(*addrString)
 		if err != nil {
@@ -57,9 +63,6 @@ func main() {
 	}
 	copy(topic[:], topicBytes)
 
-	// cast expire to correct uint
-	expire = uint32(*expireInt)
-
 	env := &whisper.Envelope{
 		Expiry: 0,
 		TTL:    0,
@@ -67,10 +70,8 @@ func main() {
 		Data:   data,
 		Nonce:  0,
 	}
-	msg := pss.PssMsg{
+	msg := digestStruct{
 		To:      addr,
-		Control: []byte{0x02}, // forces raw message mode
-		Expire:  expire,
 		Payload: env,
 	}
 
@@ -79,5 +80,13 @@ func main() {
 		panic(err)
 	}
 
-	os.Stdout.Write(serializedMsg)
+	if *nodigest {
+		os.Stdout.Write(serializedMsg)
+		return
+	}
+
+	hasher := storage.MakeHashFunc(storage.DefaultHash)()
+	hasher.Write(serializedMsg)
+	digest := hasher.Sum(nil)
+	os.Stdout.Write(digest)
 }
