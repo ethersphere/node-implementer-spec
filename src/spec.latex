@@ -19,7 +19,7 @@
 
 \maketitle
 
-\section{fundamentals}
+\section {fundamentals}
 
 \input{address.latex}
 

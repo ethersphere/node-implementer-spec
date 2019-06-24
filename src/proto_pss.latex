@@ -1,4 +1,4 @@
-\subsection{pss}
+\section{pss}
 
 The \texttt{pss} protocol consists of a single message type. The message type provides optional builtin encryption alternatives. It also contains information about how it should be routed in the Swarm network, and a topic which determines how the receiver should process the message's content.
 
@@ -90,3 +90,47 @@ The RLP encoding of this message will be:
 00000010  02 6e 83 66 6f 6f 80                              |.n.foo.|
 00000017
 \end{lstlisting}
+
+\subsection{Message handling}
+
+Whether or not a node should process a message, and how it should process it, depends on several factors.
+
+\begin{itemize}
+\item parameters in the message
+\item \texttt{pss} node configurations
+\end{itemize}
+
+This decision algorithm consists of the following sequential steps:
+
+\subsubsection{Addressing}
+
+Firstly, the node's Swarm Overlay Address \emph{MUST} match the \texttt{To} field of the \texttt{pss} message.
+
+In case the \texttt{To} field is a \emph{partial} address, the partial address \emph{MUST} match the corresponding part of the node's address.
+
+If the \texttt{To} address is an \emph{empty} address, the address automatically matches.
+
+\subsubsection{Topic}
+
+A \texttt{pss} node \emph{MUST} choose which code to execute based on the message's \texttt{Topic}.
+
+We can think of a \texttt{Topic} as an identifier of a particular \emph{application} interfacing with the node. The application subscribes to contents of messages received by the node that have that certain \texttt{Topic}.
+
+If a \texttt{pss} node has no actions registered to the topic of the message, the message \emph{MUST NOT} be processed.
+
+\subsubsection{Encryption}
+
+Handler code for a \texttt{Topic} \emph{MAY OR MAY NOT} allow messages sent without built-in encryption.
+
+If only built-in encryption is allowed, \emph{whether} and \emph{how} to handle the message \emph{MUST} depend on:
+
+\begin{itemize}
+\item Is the message encrypted using symmetric encryption or public key encryption?
+\item Does the node have the necessary key to decrypt the message.
+\end{itemize}
+
+Handling code \emph{SHOULD} only be registered for one single type of encryption scheme.
+
+For example, if handler code is registered to messages encrypted with symmetric key $S_1$ and \emph{Topic} $T$, and the node receives a message with topic $T$ encrypted with public key $P_1pub$, and the node knows the private key $P_1priv$, the message \emph{SHOULD NOT} be processed.
+
+

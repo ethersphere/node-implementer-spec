@@ -1,8 +1,6 @@
-\subsection{bzz}
+\section{bzz}
 
 The bzz protocol consists of a single message type; handshake.
-
-\subsection{handshake}
 
 The bzz handshake is the first message to be exchanged between peers after the p2p transport protocol has been successfully negotiated. After the handshake each peer should remember the following data about the other:
 
@@ -11,7 +9,7 @@ The bzz handshake is the first message to be exchanged between peers after the p
 \item Whether the peer is a \emph{light} or \emph{full} node
 \end{itemize}
 
-\subsubsection{message}
+\subsection{message}
 
 The handshake message consists of four data fields:
 
@@ -28,7 +26,7 @@ The first part is the 32 byte Swarm Overlay Address.
 
 The second part is data of arbitrary length, and is meant to represent the identity of the node on the p2p protocol transport layer. Currently the url string representation of the devp2p V4 Enode ID is used for this value. Although this value currently serves no practical purpose within the operations of the Swarm node, the handshake \emph{MUST} fail if the string cannot be parsed as a valid Enode ID. \cite{ETHWIKI:ENODE}
 
-\subsubsection{protocol}
+\subsection{protocol}
 
 Upon connection, peers send one handshake each to each other. If a more than one handshake is received from the same peer, the connection \emph{MUST} be dropped.
 
@@ -36,7 +34,7 @@ The peers \emph{MUST} have the same \texttt{Version} and \texttt{Network ID}. If
 
 The \texttt{Light Node} field is a boolean value, indicating whether the node is operating as a Light Node or not.
 
-\subsubsection{example}
+\subsection{example}
 
 Consider a handshake message with the following arbitary values:
 
