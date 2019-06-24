@@ -1,0 +1,14 @@
+\subsection{pss}
+
+The pss protocol consists of a single message type. The message type provides optional encryption alternatives (using Whisper). It also contains information about how it should be routed in the Swarm netowrk, and a topic which determines how the receiver should process the message's content.
+
+\subsection{message structure}
+
+The message type is structured as follows:
+
+\begin{lstlisting}
+To		Address
+Control		byte
+Expire		number
+Payload		Envelope
+\end{lstlisting}

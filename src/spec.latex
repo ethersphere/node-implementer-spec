@@ -1,0 +1,45 @@
+\documentclass[a4paper]{article}
+\usepackage{fullpage}
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\usepackage{listings}
+\lstset{
+	basicstyle=\footnotesize,
+	numbers=left,
+	numberstyle=\tiny,
+	showstringspaces=false,
+	keywordstyle=\color{Purple},
+	stringstyle=\color{ForestGreen},
+	commentstyle=\color{Gray},
+}
+\date{\today\\ v0.2}
+
+\author{lash}
+\title{Swarm node implementer's specification}
+\begin{document}
+
+\maketitle
+
+\section{fundamentals}
+
+\input{address.latex}
+
+\section{protocols}
+
+Swarm protocols require a p2p transport protocol.
+
+At the time of writing, the Swarm reference implementation depends on the devp2p protocol, including its RLPX encryption scheme.
+
+The following only describes the Swarm protocols. Explaining \texttt{devp2p} and \texttt{RLP(X)} is out of scope of this document. \todo{move disclaimer to preface} Data payloads will be shown both in pseudo-representation and \texttt{RLP} encoded form. \cite{ETHWIKI:RLP} \todo{appendix and refs to devp2p implementations}
+
+\todo{describe pseudo-representation}
+
+\input{proto_bzz.latex}
+
+\input{proto_pss.latex}
+
+\newpage
+
+\bibliography{swarmdevspec}
+\bibliographystyle{plain}
+
+\end{document}
