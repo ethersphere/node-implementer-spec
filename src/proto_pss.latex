@@ -157,7 +157,7 @@ By full address we mean that the \texttt{To}-field on the \texttt{pss} message c
 \item Identify the peer whose Swarm Overlay Address is the closest to the message address (the \texttt{To} field.
 \item If the selected peer is in the \emph{most proximate bin} of the node, the message should be forwarded to \emph{all} the node's \emph{nearest neighbors}.
 \item Otherwise, if the address is a full 32-byte address, the node \emph{MUST} attempt to send to exactly \emph{one} peer in the bin that is the closest match to the message.
-\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest until one is successful.
 \item If this is not successful, the node should keep the message and retry later.
 \end{enumerate}
 
@@ -167,7 +167,7 @@ By full address we mean that the \texttt{To}-field on the \texttt{pss} message c
 \item Identify the \emph{farthest} peer that matches the partial address.
 \item If that peer is in the \emph{most proximate bin}, the message is relayed as in \ref{sec:routing-with-full-address}.
 \item Otherwise, The message should be forwarded to \emph{all} peers that are in the matching bin or closer\footnote{Notice that in this context, the matching bin becomes the \emph{most proximate bin}}.
-\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest until one is successful.
 \item If this is not successful, the node should keep the message and retry later.
 \end{enumerate}
 
