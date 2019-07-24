@@ -144,20 +144,21 @@ A node \emph{MUST} always forward a message\footnote{This is done to make it mor
 \begin{enumerate}
 \item the address in the \texttt{To}-field of the message is a full 32-byte address, \emph{and} matches fully with the node's Swarm Overlay Address\footnote{In this case the recipient is already fully revealed to anyone observing the traffic}.
 \item the message has been seen already, before a certain period of time has elapsed, currently defined as $10$ seconds. (see \ref{sec:message-digest})
+\item the kademlia of the node can be considered as healthy
 \end{enumerate}
 
+\texttt{pss} uses the same kademlia table for routing decisions that the Swarm node uses for content routing. \cite[p. 2]{SWARMNETWORK}
 
-\texttt{pss} uses the same kademlia table for routing decisions that the Swarm node uses for content routing. \cite[p. 2]{SWARMNETWORK} 
+Messages \emph{MUST} only be forwarded to nodes that are running a matching version of \texttt{pss}.
 
 \subsubsection{Routing with full address} \label{sec:routing-with-full-address}
 
 By full address we mean that the \texttt{To}-field on the \texttt{pss} message contains the full 32 bytes of the intended recipient node.
 
 \begin{enumerate}
-\item Identify the peer whose Swarm Overlay Address is the closest to the message address (the \texttt{To} field.
-\item If the selected peer is in the \emph{most proximate bin} of the node, the message should be forwarded to \emph{all} the node's \emph{nearest neighbors}.
-\item Otherwise, if the address is a full 32-byte address, the node \emph{MUST} attempt to send to exactly \emph{one} peer in the bin that is the closest match to the message.
-\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest until one is successful.
+\item If the message address falls within the \emph{most proximate bin} of the node, the message should be forwarded to \emph{all} the node's \emph{nearest neighbors}.
+\item Otherwise the node \emph{MUST} attempt to send to exactly \emph{one} peer in the bin that is the closest match to the message.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in that bin in order from closest to farthest until one is successful.
 \item If this is not successful, the node should keep the message and retry later.
 \end{enumerate}
 
@@ -165,9 +166,10 @@ By full address we mean that the \texttt{To}-field on the \texttt{pss} message c
 
 \begin{enumerate}
 \item Identify the \emph{farthest} peer that matches the partial address.
-\item If that peer is in the \emph{most proximate bin}, the message is relayed as in \ref{sec:routing-with-full-address}.
-\item Otherwise, The message should be forwarded to \emph{all} peers that are in the matching bin or closer\footnote{Notice that in this context, the matching bin becomes the \emph{most proximate bin}}.
-\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in order of closest to farthest until one is successful.
+\item If that peer is in the \emph{most proximate bin}, the message should be forwarded to \emph{all} the node's \emph{nearest neighbors}.
+\item Otherwise, if the bitlength of the message address equals the proximity order of its matching bin, the message should be forwarded to \emph{all} peers that are in the matching bin or closer\footnote{Notice that in this context, the matching bin becomes the \emph{most proximate bin}}.
+\item Otherwise the bitlength of the message is \emph{longer} than the promixity order of its matching bin. Then the node \emph{MUST} attempt to send to exactly \emph{one} peer in the bin that is the closest match to the message.
+\item If this is not successful, the node \emph{MUST} try to forward to each remaining peer in that bin in order from closest to farthest until one is successful.
 \item If this is not successful, the node should keep the message and retry later.
 \end{enumerate}
 
