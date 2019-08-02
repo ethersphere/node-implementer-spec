@@ -2,6 +2,7 @@
 \usepackage{fullpage}
 \usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
 \usepackage{listings}
+\usepackage[T1]{fontenc}
 \lstset{
 	basicstyle=\footnotesize,
 	numbers=left,
@@ -19,19 +20,64 @@
 
 \maketitle
 
+\section{introduction}
+
+\subsection{data representations}
+
+This document uses the \texttt{ABNF} convention for defining data types, as described in the IETF RFC 5234. \cite{IETF:ABNF}
+
+\subsubsection{primitives}
+
+The basic identifiers are defined as follows:
+
+\begin{lstlisting}[numbers=none]
+UINT64MAX	= 18446744073709551615
+UINT32MAX	= 4294967295
+UINT16MAX	= 65535
+UINT8MAX	= 255
+UINT64		= %d0-UINT64MAX
+UINT32		= %d0-UINT32MAX
+UINT16		= %d0-UINT16MAX
+UINT8		= %d0-UINT8MAX
+
+BOOL		= BIT
+
+TIMESTAMP	= UINT32
+\end{lstlisting}
+
+\subsubsection{network specific types}
+
+\todo{add IP FQDN PORT from external rfcs}
+
+\subsubsection{rule extension for list definitions} \label{sec:abnf-list-definition}
+
+The construct \texttt{LIST} explicitly defines a list of elements. Elements may be of any type, and are separated by spaces. This identifier has implications for the RLP encoding of the data, as described in \ref{sec:protocols}
+
 \section {fundamentals}
 
 \input{address.latex}
 
-\section{protocols}
+\section{protocols} \label{src:protocols}
 
 Swarm protocols require a p2p transport protocol.
 
-At the time of writing, the Swarm reference implementation depends on the devp2p protocol, including its RLPX encryption scheme.
+At the time of writing, the Swarm reference implementation depends on the devp2p protocol, including its RLPX wire format and encryption scheme. \cite{ETHWIKI:RLP}  Detailing the concepts of \texttt{devp2p} and \texttt{RLP(X)} as such is out of scope of this document.
 
-The following only describes the Swarm protocols. Explaining \texttt{devp2p} and \texttt{RLP(X)} is out of scope of this document. \todo{move disclaimer to preface} Data payloads will be shown both in pseudo-representation and \texttt{RLP} encoded form. \cite{ETHWIKI:RLP} \todo{appendix and refs to devp2p implementations}
+Data payloads will be defined in ABNF format. Reference examples to verify the correct \texttt{RLP} encoded form of the data will also be included. \todo{appendix and refs to devp2p implementations}
 
-\todo{describe pseudo-representation}
+We define the following mappings from ABNF data type definitions to RLP data types:
+
+\begin{description}
+\item [BOOL] is encoded as an RLP encoded integer with length of one byte
+\item [OCTET] is encoded as an RLP encoded integer with length of one byte
+\item [TIMESTAMP] is encoded as an RLP encoded variable length integer
+\item [\%x\#\#] hexadecimal literals are encoded as encoded integers with length of one byte, corresponding to its hexadecimal (not its string) value
+\item [LIST] as defined in \ref{src:abnf-list-definition} will be RLP encoded as RLP lists.
+\end{description}
+
+All other data is encoded as RLP lists.
+
+\todo{example of abnf list to rlp list mapping}
 
 \input{proto_bzz.latex}
 

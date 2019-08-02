@@ -4,48 +4,42 @@ The \texttt{pss} protocol consists of a single message type. The message type pr
 
 For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any \texttt{Whisper}-related parts of your \texttt{pss} implementation are fully compartmentalized, so they can be replaced with as little effort and impact on the implementation as possible.
 
-\subsection{message structure}
+\subsection{data components}
 
-The message type is structured as follows:
+The message type is composed of the following elements:
+
+\subsubsection{Address}
+
+An arbirary fragment of a Swarm Overlay Address:
 
 \begin{lstlisting}[numbers=none]
-To		PssAddress
-Control		byte
-Expire		uint32
-Payload		Envelope
+PSSADDRESS	= 0*32OCTET
 \end{lstlisting}
 
-The \texttt{PssAddress} is a Swarm Overlay Address. The address may be specified:
-
-\begin{itemize}
-\item Full, $32$ bytes
-\item Partial, with $n$ least significant bytes removed
-\item Empty, $0$ bytes
-\end{itemize}
+\subsubsection{Control flag}
 
 The \texttt{Control} byte is a bit field that allows the sender to specify certain conditions for the processing of the message. These are currently:
 
 \begin{lstlisting}[numbers=none]
-Symmetric	0x01 // the message uses builtin symmetric encryption
-Raw		0x02 // the message does not use builtin encryption
+PSSCONTROLSYMMETRIC	= %x01 // the message uses builtin symmetric encryption
+PSSCONTROLRAW		= %x02 // the message does not use builtin encryption
+PSSFLAG			= PSSCONTROLSYMMETRIC / PSSCONTROLRAW
 \end{lstlisting}
 
-The \texttt{Expire} field is a 32 byte \texttt{Unix Timestamp}. Messages encountered later than the time represented by this timestamp \emph{MUST NOT} be routed or processed.
-
-The \texttt{Envelope} field is a \emph{Whisper Envelope} structure. See below.
+If the \texttt{Raw} control bit is set, builtin encryption is not used. 
 
 \subsubsection{Whisper Envelope} 
 
-It is out of scope of this document to discuss implementation details of Whisper. However, the \texttt{RLP} serialization of a \texttt{pss} message also includes the serialization of the \texttt{Whisper} envelope. Therefore, we include an informal description of the \texttt{RLP} serialization of the \texttt{Whisper} envelope here for convenience.
-
-The envelope contains the following fields.
+It is out of scope of this document to discuss implementation details of Whisper. However, the \texttt{RLP} serialization of a \texttt{pss} message also includes the serialization of the \texttt{Whisper} envelope. Therefore, we include a description of the \texttt{RLP} serialization of the \texttt{Whisper} envelope, as it relates to the serialization of the \texttt{pss} message.
 
 \begin{lstlisting}[numbers=none]
-Expiry	uint32		// ignored
-TTL	uint32		// ignored
-Topic	Topic		// 4 bytes
-Data	bytes		// arbitrary bytes
-Nonce	uint64		// ignored
+expiry		= TIMESTAMP	// ignored
+ttl		= UINT32	// ignored
+topic		= 4OCTET
+data		= *OCTET
+nonce		= UINT64	// ignored
+
+PSSENVELOPE	= LIST(expiry ttl topic data nonce)
 \end{lstlisting}
 
 The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are still part of the \texttt{RLP} serialization of the envelope. If builtin encryption is being used, they may contain values inserted by Whisper as it encrypts the envelope.\footnote{In the \texttt{geth} implementation of \texttt{Whisper} it is not possible to encrypt a message \emph{without} performing any \emph{Proof-of-Work}. \texttt{pss} sets the \texttt{PoW} parameter to $10^{-10}$, which effectively reduces the amount of work done to zero. On decryption, \emph{pss} \emph{ignores} the \texttt{PoW} value derived from the \texttt{Whisper} envelope.}
@@ -54,9 +48,20 @@ The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are
 
 \texttt{Data} contains the actual message Payload.
 
-\subsubsection{Raw sending mode}
+\subsection{Pss message}
 
-If the \texttt{Raw} control bit is set, builtin encryption is not used. 
+Finally we can assemble the actual wire format that encapsulates a single \texttt{pss} message:
+
+\begin{lstlisting}[numbers=none]
+to		= PSSADDRESS
+control		= PSSFLAG
+expire		= TIMESTAMP
+payload		= PSSENVELOPE
+
+PSSMESSAGE	= LIST(to control expire payload)
+\end{lstlisting}
+
+The \texttt{expire} Messages encountered later than the time represented by the value of \texttt{expire} \emph{MUST NOT} be routed or processed.
 
 In this case, the \texttt{Data} field in the envelope simply consists of the literal byte data of the message payload.
 
@@ -70,17 +75,17 @@ Consider a \texttt{pss} message with the following arbitary values:
 
 \begin{lstlisting}[numbers=none]
 Pss message:
-To		0xabcd 		// A 2-byte partial address
-Control		0x02		// Raw sending mode
-Expire		1561373650
-Payload		Envelope	// see below
+to		0xabcd 		// A 2-byte partial address
+control		0x02		// Raw sending mode
+expire		1561373650
+payload		Envelope	// see below
 
 Envelope:
-Expiry		0		// unused
-TTL		0		// unused
-Topic		0x0000026e
-Payload		0x666f6f	
-Nonce		0
+expiry		0		// unused
+ttl		0		// unused
+topic		0x0000026e
+payload		0x666f6f	
+nonce		0		// unused
 \end{lstlisting}
 
 The RLP encoding of this message will be:

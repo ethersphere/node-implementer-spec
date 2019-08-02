@@ -14,18 +14,17 @@ The bzz handshake is the first message to be exchanged between peers after the p
 The handshake message consists of four data fields:
 
 \begin{lstlisting}[numbers=none]
-Version      	     uint64
-Network ID           uint64
-Address data         AddressPair (see below)
-Light Node           boolean (byte)
+version		= UINT64
+Network ID	= UINT64
+Address data	= ADDRESSPAIR
+Light Node      = BOOL
 \end{lstlisting}
 
 The \texttt{AddressPair} consists of two strings, RLP-encoded as a single string in two parts.
 
 The first part is the 32 byte Swarm Overlay Address.
 
-The second part is data of arbitrary length, and is meant to represent the identity of the node on the p2p protocol transport layer. Currently the url string representation of the devp2p V4 Enode ID is used for this value. Although this value currently serves no practical purpose within the operations of the Swarm node, the handshake \emph{MUST} fail if the string cannot be parsed as a valid Enode ID. \cite{ETHWIKI:ENODE}
-
+The second part is data of arbitrary length, and is meant to represent the identity of the node on the p2p protocol transport layer. 
 \subsection{protocol}
 
 Upon connection, the \emph{peer who initiated the connection} sends a handshake message to the other. If a more than one handshake is received from the same peer, the connection \emph{MUST} be dropped.

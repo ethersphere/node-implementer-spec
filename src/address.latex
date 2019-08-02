@@ -1,5 +1,27 @@
-\subsection{address}
+\subsection{Swarm Overlay Address}
 
 Swarm addresses all content and all nodes with 32-byte hashes. A node address is called its Swarm Overlay Address. It is derived from the public key of the Ethereum account used to operate the node.\cite[section 9.1]{SWARMGUIDE}
 
 To obtain the Swarm Overlay Address, hash the \emph{uncompressed} form of the public key, \emph{including} its $04$ prefix, using the KECCAK256 hashing algorithm. \cite[network/network.go:68]{SWARMCODE} \cite[p. 78]{MASTERINGBITCOIN} \cite{KECCAK} 
+
+Formally we define the Swarm Overlay Address thus:
+
+\begin{lstlisting}[numbers=none]
+OVERLAYADDRESS = 32*(%x00-ff)
+\end{lstlisting}
+
+\subsection{Swarm Address Pair}
+
+To enable peers to locate the a node on the network, the aforementioned Swarm Overlay Address is paired with an Underlay Address. The Underlay Address is a string representation of the node's network location on the underlying transport layer. 
+
+Currently the url string representation of the devp2p V4 Enode ID is used for this value. Although this value currently serves no practical purpose within the operations of the Swarm node, the handshake \emph{MUST} fail if the string cannot be parsed as a valid Enode ID. \cite{ETHWIKI:ENODE}
+
+We here add the following definitions:
+
+\begin{lstlisting}[numbers=none]
+ENODEPREFIX = "enode://"
+PUBLICKEYHEX = "04" 64*(HEXDIG)
+HOST = IP / FQDN
+UNDERLAYADDRESS = ENODEPREFIX PUBLICKEYHEX "@" HOST ":" PORT
+ADDRESSPAIR=2#2list(OVERLAYADDRESS UNDERLAYADDRESS)
+\end{lstlisting}
