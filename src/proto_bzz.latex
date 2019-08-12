@@ -20,11 +20,6 @@ Address data	= ADDRESSPAIR
 Light Node      = BOOL
 \end{lstlisting}
 
-The \texttt{AddressPair} consists of two strings, RLP-encoded as a single string in two parts.
-
-The first part is the 32 byte Swarm Overlay Address.
-
-The second part is data of arbitrary length, and is meant to represent the identity of the node on the p2p protocol transport layer. 
 \subsection{protocol}
 
 Upon connection, the \emph{peer who initiated the connection} sends a handshake message to the other. If a more than one handshake is received from the same peer, the connection \emph{MUST} be dropped.
@@ -40,9 +35,8 @@ Consider a handshake message with the following arbitary values:
 \begin{lstlisting}[numbers=none]
 Version               42
 Network ID            622
-Address Data pt. 1    134c2fdea53719022366b383bae4ae2e23f74d734a4f40170970b2910da851ee     
-Address Data pr. 2    enode://0459783d8f54b3e684d2a6928e4d94a0c32570eb14fbecac9d07955c0a91e
-                      b3b5edce5ef23cff94250fb5591456d2d3f576315db146421d5e885675978fa59dff5
+Address Data.OVERLAYADDRESS	134c2fdea53719022366b383bae4ae2e23f74d734a4f40170970b2910da851ee
+Address Data.UNDERLAYADDRES 	enode://0459783d8f54b3e684d2a6928e4d94a0c32570eb14fbecac9d07955c0a91eb3b5edce5ef23cff94250fb5591456d2d3f576315db146421d5e885675978fa59dff5
 Lightnode             1
 \end{lstlisting}
 

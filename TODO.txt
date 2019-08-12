@@ -1,0 +1,4 @@
+Parser TODOs
+
+- Does not convert bibtex links, should (into footnotes)
+- math numbers ($##$) should be converted to `##`

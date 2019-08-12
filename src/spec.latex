@@ -49,15 +49,15 @@ TIMESTAMP	= UINT32
 
 \todo{add IP FQDN PORT from external rfcs}
 
-\subsubsection{rule extension for list definitions} \label{sec:abnf-list-definition}
+\subsubsection{rule extension for list definitions} \label{abnf-list-definition}
 
-The construct \texttt{LIST} explicitly defines a list of elements. Elements may be of any type, and are separated by spaces. This identifier has implications for the RLP encoding of the data, as described in \ref{sec:protocols}
+The construct \texttt{LIST} explicitly defines a list of elements. Elements may be of any type, and are separated by spaces. This identifier has implications for the RLP encoding of the data, as described in \ref{protocols}.
 
 \section {fundamentals}
 
 \input{address.latex}
 
-\section{protocols} \label{src:protocols}
+\section{protocols} \label{protocols}
 
 Swarm protocols require a p2p transport protocol.
 
@@ -72,12 +72,22 @@ We define the following mappings from ABNF data type definitions to RLP data typ
 \item [OCTET] is encoded as an RLP encoded integer with length of one byte
 \item [TIMESTAMP] is encoded as an RLP encoded variable length integer
 \item [\%x\#\#] hexadecimal literals are encoded as encoded integers with length of one byte, corresponding to its hexadecimal (not its string) value
-\item [LIST] as defined in \ref{src:abnf-list-definition} will be RLP encoded as RLP lists.
+\item [LIST] as defined in \ref{abnf-list-definition} will be RLP encoded as RLP lists.
 \end{description}
 
 All other data is encoded as RLP lists.
 
-\todo{example of abnf list to rlp list mapping}
+The outermost element of a serialization is always a LIST item \footnote{This is due to the fact that the reference implementation is written in golang, and the default RLP deserialization of golang structs treats the struct itself as a list.}
+
+\subsection{example}
+
+A message structure with only one field of \texttt{3OCTET} data will in \emph{reality} be \texttt{LIST(3OCTET)}. If  the data is \texttt{0x666f6f} it will serialize to \texttt{0xc4 83 66 6f 6f}, which breaks down to:
+
+\begin{lstlisting}[numbers=none]
+LIST:	0xc4 (list, 4 bytes long)
+3OCTET:	0x83 (string, 3 bytes long)
+data: 	0x66 0x6f 0x6f
+\end{lstlisting}
 
 \input{proto_bzz.latex}
 
