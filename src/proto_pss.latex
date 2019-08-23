@@ -1,12 +1,8 @@
-\section{pss}
+\subsection{pss}
 
 The \texttt{pss} protocol consists of a single message type. The message type provides optional builtin encryption alternatives. It also contains information about how it should be routed in the Swarm network, and a topic which determines how the receiver should process the message's content.
 
 For the moment, \texttt{pss} uses \texttt{Whisper} for builtin encryption. \cite{ETHWIKI:WHISPER} \emph{this may change in the future}. For this reason, it is advisable that any \texttt{Whisper}-related parts of your \texttt{pss} implementation are fully compartmentalized, so they can be replaced with as little effort and impact on the implementation as possible.
-
-\subsection{data components}
-
-The message type is composed of the following elements:
 
 \subsubsection{Address}
 
@@ -48,7 +44,7 @@ The fields marked as \texttt{ignored} are not used by \texttt{pss}. But they are
 
 \texttt{Data} contains the actual message Payload.
 
-\subsection{Pss message}
+\subsubsection{Pss message}
 
 Finally we can assemble the actual wire format that encapsulates a single \texttt{pss} message:
 
@@ -67,36 +63,8 @@ In this case, the \texttt{Data} field in the envelope simply consists of the lit
 
 No \texttt{Whisper} functions are executed on the envelope. 
 
-\subsubsection{Example} \label{pss-message-example}
 
-Because the details of the \texttt{Whisper} implementation is out of scope of this document, we will limit ourselves to describing the message \texttt{RLP} serialization using the \emph{Raw sending mode}.
-
-Consider a \texttt{pss} message with the following arbitary values:
-
-\begin{lstlisting}[numbers=none]
-Pss message:
-to		0xabcd 		// A 2-byte partial address
-control		0x02		// Raw sending mode
-expire		1561373650
-payload		Envelope	// see below
-
-Envelope:
-expiry		0		// unused
-ttl		0		// unused
-topic		0x0000026e
-payload		0x666f6f	
-nonce		0		// unused
-\end{lstlisting}
-
-The RLP encoding of this message will be:
-
-\begin{lstlisting}[numbers=none]
-00000000  d6 82 ab cd 02 84 5d 10  ab d2 cc 80 80 84 00 00  |......].........|
-00000010  02 6e 83 66 6f 6f 80                              |.n.foo.|
-00000017
-\end{lstlisting}
-
-\subsection{Message handling}
+\subsubsection{Message handling}
 
 A \emph{receiver} of a message is any node whose address matchs the address of the message, and who is able to decipher the contents.
 
@@ -109,7 +77,7 @@ Whether or not a node should process a message, and \emph{how} it should process
 
 This decision algorithm consists of the following sequential steps:
 
-\subsubsection{Addressing}
+\paragraph{Addressing}
 
 The receiving node's Swarm Overlay Address \emph{MUST} match the \texttt{To} field of the \texttt{pss} message.
 
@@ -117,7 +85,7 @@ In case the \texttt{To} field is a \emph{partial} address, the partial address \
 
 If the \texttt{To} address is an \emph{empty} address, the address automatically matches.
 
-\subsubsection{Topic}
+\paragraph{Topic}
 
 A \texttt{pss} node \emph{MUST} choose which code to execute based on the message's \texttt{Topic}.
 
@@ -125,7 +93,7 @@ We can think of a \texttt{Topic} as an identifier of a particular \emph{applicat
 
 If a \texttt{pss} node has no actions registered to the topic of the message, the message \emph{MUST NOT} be processed.
 
-\subsubsection{Encryption}
+\paragraph{Encryption}
 
 Handler code for a \texttt{Topic} \emph{MAY OR MAY NOT} allow messages sent without built-in encryption.
 
@@ -140,7 +108,7 @@ Handling code \emph{SHOULD} only be registered for one single encryption scheme.
 
 For example, if handler code is registered to messages encrypted with symmetric key $S_1$ and \emph{Topic} $T$, and the node receives a message with topic $T$ encrypted with public key $P_1pub$, and the node knows the private key $P_1priv$, the message \emph{SHOULD NOT} be processed.
 
-\subsection{Forwarding}
+\subsubsection{Forwarding}
 
 The rules for message forwarding apply to \emph{all} nodes on the message route. In this document we refer to these nodes \emph{relaying nodes}. This includes the \emph{sender} and any \emph{receiver} nodes.
 
@@ -189,20 +157,8 @@ By full address we mean that the \texttt{To}-field on the \texttt{pss} message c
 
 In order to identify messages that have already been seen, a message digest is computed on the message by every relaying node. 
 
+\todo{currently this serialization is based on RLP. This must change}
+
 The digest is the \emph{KECCAK256 hash} of the \texttt{RLP} serialization of the \texttt{To} and \texttt{Payload} fields of the \texttt{pss} message.
 
-For example, the \texttt{RLP} serialized data for calculating the of the message in \ref{pss-message-example} would be:
 
-\begin{lstlisting}[numbers=none]
-00000000  d0 82 ab cd cc 80 80 84  00 00 02 6e 83 66 6f 6f  |...........n.foo|
-00000010  80                                                |.|
-00000011
-\end{lstlisting}
-
-The resulting digest:
-
-\begin{lstlisting}[numbers=none]
-00000000  7e 42 00 03 02 db be 05  ec 83 12 3c 4d 59 ea 4a  |~B.........<MY.J|
-00000010  92 ff 01 44 60 38 64 dd  6f 06 b8 67 9d 81 72 98  |...D`8d.o..g..r.|
-00000020
-\end{lstlisting}

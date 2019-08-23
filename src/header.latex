@@ -12,39 +12,8 @@
 	stringstyle=\color{ForestGreen},
 	commentstyle=\color{Gray},
 }
-\setcounter{secnumdepth}{4}
-
 \date{\today\\ v0.2}
 
 \author{lash}
 \title{Swarm node implementer's specification}
 \begin{document}
-
-\maketitle
-
-\section{introduction}
-
-\input{data.latex}
-
-\section {fundamentals}
-
-\input{address.latex}
-
-\section{protocols} \label{protocols}
-
-\input{proto_bzz.latex}
-
-\input{proto_pss.latex}
-
-\newpage
-
-\appendix
-
-\input{a_rlp.latex}
-
-\newpage
-
-\bibliography{spec}
-\bibliographystyle{plain}
-
-\end{document}
